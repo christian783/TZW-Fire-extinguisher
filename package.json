@@ -1,0 +1,19 @@
+{
+  "name": "restful-template",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Reusable React and Express RESTful boilerplate with PostgreSQL, Sequelize, JWT auth, Swagger, logging, validation, and Tailwind CSS.",
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev --workspace backend\" \"npm run dev --workspace frontend\"",
+    "start": "npm run start --workspace backend",
+    "build": "npm run build --workspace frontend",
+    "install:all": "npm install"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
