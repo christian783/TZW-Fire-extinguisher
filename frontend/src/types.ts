@@ -115,3 +115,13 @@ export type OtpResponse = {
   email: string;
   expiresAt: string;
 };
+
+export type PasswordRecoveryResponse = {
+  userId?: string;
+  email: string;
+  expiresAt?: string;
+};
+
+export type ResetPasswordResponse = {
+  userId: string;
+};
