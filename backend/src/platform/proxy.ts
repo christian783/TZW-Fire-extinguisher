@@ -1,3 +1,5 @@
+import logger from "../utils/logger";
+
 const hopByHopHeaders = new Set(["connection", "content-length", "host", "keep-alive", "proxy-authenticate", "proxy-authorization", "te", "trailer", "transfer-encoding", "upgrade"]);
 
 const buildHeaders = (req) => {
@@ -24,6 +26,12 @@ const proxyToService = (targetBaseUrl: string, publicPrefix: string, servicePref
       const targetUrl = new URL(forwardedPath, targetBaseUrl);
       const hasBody = !["GET", "HEAD"].includes(req.method) && typeof req.body !== "undefined";
 
+      logger.info("[api-gateway] Proxying request", {
+        method: req.method,
+        from: req.originalUrl,
+        to: targetUrl.toString()
+      });
+
       const response = await fetch(targetUrl, {
         method: req.method,
         headers: buildHeaders(req),
@@ -37,6 +45,11 @@ const proxyToService = (targetBaseUrl: string, publicPrefix: string, servicePref
       });
 
       const buffer = Buffer.from(await response.arrayBuffer());
+      logger.info("[api-gateway] Proxied response", {
+        method: req.method,
+        from: req.originalUrl,
+        status: response.status
+      });
       res.status(response.status).send(buffer);
     } catch (error) {
       next(error);

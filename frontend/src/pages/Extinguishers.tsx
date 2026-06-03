@@ -154,8 +154,8 @@ const Extinguishers = () => {
 
   return (
     <Stack gap="lg">
-      <Group justify="space-between" align="flex-start">
-        <div>
+      <Group className="page-header" justify="space-between" align="flex-start">
+        <div className="page-title-copy">
           <Text className="page-kicker">Equipment</Text>
           <Title order={1}>Fire Extinguishers</Title>
           <Text c="dimmed">Inventory registration, status tracking, and lifecycle management.</Text>
@@ -277,11 +277,11 @@ const Extinguishers = () => {
           <Stack>
             <TextInput label="Serial number" required {...form.getInputProps("serialNumber")} />
             <TextInput label="Location" required {...form.getInputProps("location")} />
-            <Group grow>
+            <Group className="responsive-form-row" grow>
               <Select label="Type" data={typeOptions} required {...form.getInputProps("type")} />
               <Select label="Size" data={sizeOptions} required {...form.getInputProps("size")} />
             </Group>
-            <Group grow>
+            <Group className="responsive-form-row" grow>
               <TextInput label="Installation date" type="date" required {...form.getInputProps("installationDate")} />
               <TextInput label="Expiry date" type="date" required {...form.getInputProps("expiryDate")} />
             </Group>

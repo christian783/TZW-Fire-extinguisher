@@ -1,4 +1,4 @@
-import { Alert, Anchor, Button, Group, Paper, PinInput, Stack, Text, TextInput, ThemeIcon, Title } from "@mantine/core";
+import { Anchor, Button, Group, Paper, PinInput, Stack, Text, TextInput, ThemeIcon, Title } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { notifications } from "@mantine/notifications";
 import { IconMailCheck } from "@tabler/icons-react";
@@ -12,12 +12,12 @@ const VerifyOtp = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { login } = useAuth();
-  const state = location.state as { email?: string; devOtp?: string } | null;
+  const state = location.state as { email?: string } | null;
 
   const form = useForm({
     initialValues: {
       email: state?.email || "",
-      otp: state?.devOtp || ""
+      otp: ""
     },
     validate: {
       email: (value) => (/^\S+@\S+$/.test(value) ? null : "Enter a valid email"),
@@ -40,11 +40,10 @@ const VerifyOtp = () => {
 
     const response = await api.post<ApiResponse<OtpResponse>>("/auth/resend-otp", { email: form.values.email });
     const otpData = response.data.data;
-    form.setFieldValue("otp", otpData.devOtp || "");
     notifications.show({
       color: "blue",
-      title: "OTP generated",
-      message: otpData.devOtp ? `Development OTP: ${otpData.devOtp}` : "Check your email for the new OTP."
+      title: "OTP sent",
+      message: `Check ${otpData.email} for the new OTP.`
     });
   };
 
@@ -63,12 +62,6 @@ const VerifyOtp = () => {
               Enter the 6-digit code generated during signup.
             </Text>
           </div>
-
-          {state?.devOtp ? (
-            <Alert color="blue" title="Development OTP">
-              {state.devOtp}
-            </Alert>
-          ) : null}
 
           <form onSubmit={form.onSubmit(verifyOtp)}>
             <Stack>

@@ -7,6 +7,7 @@ import Extinguishers from "./pages/Extinguishers";
 import Inspections from "./pages/Inspections";
 import Login from "./pages/Login";
 import Maintenance from "./pages/Maintenance";
+import Profile from "./pages/Profile";
 import Register from "./pages/Register";
 import Reports from "./pages/Reports";
 import Users from "./pages/Users";
@@ -25,6 +26,7 @@ const App = () => {
           <Route path="/extinguishers" element={<Extinguishers />} />
           <Route path="/inspections" element={<Inspections />} />
           <Route path="/maintenance" element={<Maintenance />} />
+          <Route path="/profile" element={<Profile />} />
           <Route element={<ProtectedRoute roles={["ADMIN", "INSPECTOR"]} />}>
             <Route path="/reports" element={<Reports />} />
           </Route>

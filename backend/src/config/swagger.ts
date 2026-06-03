@@ -125,13 +125,7 @@ const swaggerSpec = swaggerJsdoc({
           properties: {
             userId: { type: "string", format: "uuid" },
             email: { type: "string", format: "email", example: "jane@example.com" },
-            expiresAt: { type: "string", format: "date-time" },
-            devOtp: {
-              type: "string",
-              nullable: true,
-              description: "Returned only outside production to make local development easier.",
-              example: "123456"
-            }
+            expiresAt: { type: "string", format: "date-time" }
           }
         },
         AuthData: {

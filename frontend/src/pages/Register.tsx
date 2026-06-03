@@ -76,10 +76,10 @@ const Register = () => {
     notifications.show({
       color: "blue",
       title: "Verify your email",
-      message: otpData.devOtp ? `Development OTP: ${otpData.devOtp}` : "Check your email for the OTP."
+      message: "Check your email for the OTP."
     });
 
-    navigate("/verify-otp", { state: { email: otpData.email, devOtp: otpData.devOtp } });
+    navigate("/verify-otp", { state: { email: otpData.email } });
   };
 
   return (

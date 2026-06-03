@@ -51,8 +51,8 @@ const Dashboard = () => {
 
   return (
     <Stack gap="lg">
-      <Group justify="space-between" align="flex-end">
-        <div>
+      <Group className="page-header" justify="space-between" align="flex-end">
+        <div className="page-title-copy">
           <Text className="page-kicker">Command overview</Text>
           <Title order={1}>Fire Safety Dashboard</Title>
           <Text c="dimmed">Operational readiness, compliance exposure, and active inspection workload.</Text>

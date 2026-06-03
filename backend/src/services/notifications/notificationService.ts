@@ -12,6 +12,8 @@ export const buildInspectionScheduledNotification = (inspection, extinguisher) =
 
 const eventSubject = (type: string) => {
   switch (type) {
+    case "auth.otp_requested":
+      return "Your TZW Fire Safety verification code";
     case "inspection.scheduled":
       return "Inspection scheduled";
     case "inspection.completed":
@@ -31,7 +33,35 @@ const eventSubject = (type: string) => {
   }
 };
 
+const otpEmailBody = (payload: Record<string, unknown>) => {
+  const purpose = String(payload.purpose || "signup");
+  const action =
+    purpose === "password-recovery"
+      ? "reset your password"
+      : purpose === "signup-resend"
+        ? "complete your email verification"
+        : "activate your account";
+
+  return [
+    `Hello ${String(payload.firstName || "there")},`,
+    "",
+    `Use this one-time password to ${action}:`,
+    "",
+    String(payload.otpCode || ""),
+    "",
+    `This code expires at ${new Date(String(payload.expiresAt)).toLocaleString()}.`,
+    "",
+    "If you did not request this code, you can ignore this email.",
+    "",
+    "TZW Fire Safety"
+  ].join("\n");
+};
+
 const eventBody = (type: string, payload: Record<string, unknown>) => {
+  if (type === "auth.otp_requested") {
+    return otpEmailBody(payload);
+  }
+
   const lines = [
     "TZW Fire Safety notification",
     "",
@@ -39,6 +69,7 @@ const eventBody = (type: string, payload: Record<string, unknown>) => {
     "",
     ...Object.entries(payload)
       .filter(([key]) => key !== "recipientEmail")
+      .filter(([key]) => key !== "otpCode")
       .map(([key, value]) => `${key}: ${typeof value === "object" ? JSON.stringify(value) : String(value)}`)
   ];
 

@@ -3,6 +3,7 @@ import { body } from "express-validator";
 
 import authController from "../controllers/authController";
 import authenticate from "../middleware/auth";
+import internalOnly from "../middleware/internalOnly";
 import protect, { ROLES } from "../middleware/role";
 import validate from "../middleware/validate";
 import asyncHandler from "../utils/asyncHandler";
@@ -35,10 +36,40 @@ const passwordValidator = (field) =>
 
 /**
  * @swagger
+ * /api/auth/internal/sync:
+ *   post:
+ *     summary: Synchronize auth user profile from another service
+ *     description: Internal service endpoint used by the User Service to keep Auth Service role and email verification state consistent across service databases.
+ *     tags: [Auth]
+ *     parameters:
+ *       - in: header
+ *         name: x-internal-service-token
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Internal service token.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: "#/components/schemas/UserUpdateRequest"
+ *     responses:
+ *       200:
+ *         description: Auth user synchronized successfully
+ *       403:
+ *         description: Internal service token is invalid
+ *       404:
+ *         description: Auth user not found
+ */
+router.post("/internal/sync", internalOnly, asyncHandler(authController.syncUser));
+
+/**
+ * @swagger
  * /api/auth/register:
  *   post:
  *     summary: Register a new user and issue a signup OTP
- *     description: Creates a test account with the selected role, keeps email verification disabled until OTP confirmation, and returns OTP metadata. In non-production environments the response also includes devOtp for local testing.
+ *     description: Creates a test account with the selected role, keeps email verification disabled until OTP confirmation, and publishes an auth.otp_requested event so the Notification Service emails the OTP via Gmail SMTP.
  *     tags: [Auth]
  *     requestBody:
  *       required: true
@@ -48,7 +79,7 @@ const passwordValidator = (field) =>
  *             $ref: "#/components/schemas/RegisterRequest"
  *     responses:
  *       201:
- *         description: User registered successfully and OTP generated
+ *         description: User registered successfully and OTP email queued
  *         content:
  *           application/json:
  *             schema:
@@ -149,7 +180,7 @@ router.post(
  * /api/auth/resend-otp:
  *   post:
  *     summary: Generate a new signup OTP
- *     description: Replaces the pending signup OTP for an unverified user. In non-production environments the response includes devOtp for local testing.
+ *     description: Replaces the pending signup OTP for an unverified user and publishes an auth.otp_requested event so the Notification Service emails the OTP via Gmail SMTP.
  *     tags: [Auth]
  *     requestBody:
  *       required: true
@@ -159,7 +190,7 @@ router.post(
  *             $ref: "#/components/schemas/ResendOtpRequest"
  *     responses:
  *       200:
- *         description: OTP regenerated
+ *         description: OTP regenerated and email queued
  *         content:
  *           application/json:
  *             schema:
@@ -361,6 +392,7 @@ router.patch(
  * /api/auth/forgot-password:
  *   post:
  *     summary: Request forgotten password recovery OTP
+ *     description: Generates a password recovery OTP when the email exists and publishes an auth.otp_requested event so the Notification Service emails the OTP via Gmail SMTP.
  *     tags: [Auth]
  *     requestBody:
  *       required: true
@@ -370,7 +402,7 @@ router.patch(
  *             $ref: "#/components/schemas/ResendOtpRequest"
  *     responses:
  *       200:
- *         description: Password recovery OTP generated when the email exists
+ *         description: Password recovery OTP email queued when the email exists
  *       422:
  *         description: Validation failed
  */

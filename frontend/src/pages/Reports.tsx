@@ -42,8 +42,8 @@ const Reports = () => {
 
   return (
     <Stack gap="lg">
-      <Group justify="space-between" align="flex-start">
-        <div>
+      <Group className="page-header" justify="space-between" align="flex-start">
+        <div className="page-title-copy">
           <Text className="page-kicker">Compliance</Text>
           <Title order={1}>Reports</Title>
           <Text c="dimmed">Real-time inventory, inspection, compliance, and maintenance reporting with CSV/PDF exports.</Text>
@@ -93,14 +93,14 @@ const Reports = () => {
       </SimpleGrid>
 
       <Card className="enterprise-card" p="lg">
-        <Group justify="space-between" align="flex-end" mb="md">
-          <div>
+        <Group className="page-header" justify="space-between" align="flex-end" mb="md">
+          <div className="page-title-copy">
             <Text className="section-label">Exports</Text>
             <Title order={2} size="h3">
               Report Packages
             </Title>
           </div>
-          <Group className="toolbar">
+          <Group className="toolbar report-toolbar">
             <TextInput label="From" type="date" value={fromDate} onChange={(event) => setFromDate(event.currentTarget.value)} />
             <TextInput label="To" type="date" value={toDate} onChange={(event) => setToDate(event.currentTarget.value)} />
           </Group>
@@ -129,7 +129,7 @@ const Reports = () => {
                     </Text>
                   </Table.Td>
                   <Table.Td>
-                    <Group justify="flex-end" gap="xs">
+                    <Group className="page-actions" justify="flex-end" gap="xs">
                       <Button variant="light" size="xs" leftSection={<IconDownload size={14} />} onClick={() => exportReport(reportType, "csv")}>
                         CSV
                       </Button>

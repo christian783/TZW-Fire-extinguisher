@@ -18,6 +18,7 @@ type AuthContextValue = {
   isAuthenticated: boolean;
   login: (nextToken: string) => void;
   logout: () => void;
+  updateCurrentUser: (updates: Partial<User>) => void;
   isAdmin: () => boolean;
   hasRole: (role: Role | Role[]) => boolean;
 };
@@ -67,8 +68,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     try {
       const decodedUser = decodeUserFromToken(token);
-      setUser(decodedUser);
-      localStorage.setItem(USER_KEY, JSON.stringify(decodedUser));
+      const savedUser = getSavedUser();
+      const nextUser = savedUser?.id === decodedUser.id ? { ...decodedUser, firstName: savedUser.firstName, lastName: savedUser.lastName } : decodedUser;
+      setUser(nextUser);
+      localStorage.setItem(USER_KEY, JSON.stringify(nextUser));
     } catch {
       logout();
     }
@@ -80,6 +83,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem(USER_KEY, JSON.stringify(decodedUser));
     setToken(nextToken);
     setUser(decodedUser);
+  }, []);
+
+  const updateCurrentUser = useCallback((updates: Partial<User>) => {
+    setUser((currentUser) => {
+      if (!currentUser) {
+        return currentUser;
+      }
+
+      const nextUser = { ...currentUser, ...updates };
+      localStorage.setItem(USER_KEY, JSON.stringify(nextUser));
+      return nextUser;
+    });
   }, []);
 
   const hasRole = useCallback(
@@ -104,10 +119,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       isAuthenticated: Boolean(token && user),
       login,
       logout,
+      updateCurrentUser,
       isAdmin: () => hasRole("ADMIN"),
       hasRole
     }),
-    [hasRole, login, logout, token, user]
+    [hasRole, login, logout, token, updateCurrentUser, user]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

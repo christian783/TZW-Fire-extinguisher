@@ -4,19 +4,15 @@ import { sendSuccess } from "../utils/apiResponse";
 import { generateToken } from "../utils/jwt";
 import { compareOtpCode, createOtpExpiry, generateOtpCode, hashOtpCode, isOtpExpired } from "../utils/otp";
 import { publishDomainEvent } from "../utils/domainEvents";
+import { publishRabbitEvent } from "../platform/rabbitmq";
+import logger from "../utils/logger";
 
-const buildOtpResponseData = (user, otpCode: string) => {
-  const data: Record<string, unknown> = {
+const buildOtpResponseData = (user) => {
+  return {
     userId: user.id,
     email: user.email,
     expiresAt: user.otpExpiresAt
   };
-
-  if (process.env.NODE_ENV !== "production") {
-    data.devOtp = otpCode;
-  }
-
-  return data;
 };
 
 const assignOtp = async (user) => {
@@ -26,6 +22,37 @@ const assignOtp = async (user) => {
   await user.save();
 
   return otpCode;
+};
+
+const publishOtpEmail = async (user, otpCode: string, purpose: "signup" | "signup-resend" | "password-recovery") => {
+  try {
+    await publishRabbitEvent({
+      type: "auth.otp_requested",
+      occurredAt: new Date().toISOString(),
+      payload: {
+        recipientEmail: user.email,
+        userId: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        otpCode,
+        expiresAt: user.otpExpiresAt,
+        purpose
+      }
+    });
+    logger.info("[auth-service] OTP email event queued", {
+      userId: user.id,
+      email: user.email,
+      purpose
+    });
+  } catch (error) {
+    logger.error("[auth-service] OTP email event publish failed", {
+      userId: user.id,
+      email: user.email,
+      purpose,
+      message: error.message
+    });
+    throw new AppError("Could not queue OTP email. Please make sure RabbitMQ and the Notification Service are running.", 503);
+  }
 };
 
 const syncUserProfile = async (user) => {
@@ -61,12 +88,49 @@ const syncUserProfile = async (user) => {
   }
 };
 
+const syncUser = async (req, res) => {
+  const user: any = await User.unscoped().findOne({
+    where: req.body.id ? { id: req.body.id } : { email: String(req.body.email).toLowerCase().trim() }
+  });
+
+  if (!user) {
+    throw new AppError("Auth user not found for synchronization", 404);
+  }
+
+  ["firstName", "lastName", "email", "role", "emailVerified"].forEach((field) => {
+    if (Object.prototype.hasOwnProperty.call(req.body, field)) {
+      user[field] = req.body[field];
+    }
+  });
+
+  if (req.body.emailVerified) {
+    user.otpCodeHash = null;
+    user.otpExpiresAt = null;
+    user.otpVerifiedAt = user.otpVerifiedAt || new Date();
+  }
+
+  await user.save();
+
+  return sendSuccess(res, {
+    message: "Auth user synchronized successfully",
+    data: { user }
+  });
+};
+
 const register = async (req, res) => {
   const { firstName, lastName, email, password, role = "USER" } = req.body;
   const normalizedEmail = String(email).toLowerCase().trim();
 
+  logger.info("[auth-service] Register request received", {
+    email: normalizedEmail,
+    role
+  });
+
   const existingUser = await User.findOne({ where: { email: normalizedEmail } });
   if (existingUser) {
+    logger.info("[auth-service] Register request rejected because email already exists", {
+      email: normalizedEmail
+    });
     throw new AppError("A user with this email already exists", 409);
   }
 
@@ -81,12 +145,13 @@ const register = async (req, res) => {
 
   const createdUser: any = await User.unscoped().findByPk((user as any).id);
   const otpCode = await assignOtp(createdUser);
+  await publishOtpEmail(createdUser, otpCode, "signup");
   await syncUserProfile(createdUser);
 
   return sendSuccess(res, {
     statusCode: 201,
-    message: "User registered successfully. Verify the OTP to activate the account.",
-    data: buildOtpResponseData(createdUser, otpCode)
+    message: "User registered successfully. Check your email for the OTP to activate the account.",
+    data: buildOtpResponseData(createdUser)
   });
 };
 
@@ -152,10 +217,11 @@ const resendSignupOtp = async (req, res) => {
   }
 
   const otpCode = await assignOtp(user);
+  await publishOtpEmail(user, otpCode, "signup-resend");
 
   return sendSuccess(res, {
-    message: "A new OTP has been generated",
-    data: buildOtpResponseData(user, otpCode)
+    message: "A new OTP has been sent to your email",
+    data: buildOtpResponseData(user)
   });
 };
 
@@ -249,10 +315,11 @@ const forgotPassword = async (req, res) => {
   }
 
   const otpCode = await assignOtp(user);
+  await publishOtpEmail(user, otpCode, "password-recovery");
 
   return sendSuccess(res, {
-    message: "Password recovery OTP generated",
-    data: buildOtpResponseData(user, otpCode)
+    message: "Password recovery OTP sent to your email",
+    data: buildOtpResponseData(user)
   });
 };
 
@@ -285,6 +352,7 @@ const resetPassword = async (req, res) => {
 };
 
 export default {
+  syncUser,
   register,
   verifySignupOtp,
   resendSignupOtp,

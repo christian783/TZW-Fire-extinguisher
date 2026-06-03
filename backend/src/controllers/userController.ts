@@ -3,6 +3,36 @@ import { AppError } from "../middleware/errorHandler";
 import { sendSuccess } from "../utils/apiResponse";
 import paginate from "../utils/paginate";
 
+const authServiceUrl = () => process.env.AUTH_SERVICE_URL || "http://localhost:5101";
+
+const syncAuthUser = async (user) => {
+  const internalToken = process.env.INTERNAL_SERVICE_TOKEN;
+
+  if (!internalToken) {
+    throw new AppError("INTERNAL_SERVICE_TOKEN is required to synchronize auth users", 500);
+  }
+
+  const response = await fetch(new URL("/auth/internal/sync", authServiceUrl()), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-internal-service-token": internalToken
+    },
+    body: JSON.stringify({
+      id: user.id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      role: user.role,
+      emailVerified: user.emailVerified
+    })
+  });
+
+  if (!response.ok) {
+    throw new AppError("Could not synchronize user changes with Auth Service", response.status);
+  }
+};
+
 const listUsers = async (req, res) => {
   const { page = 1, limit = 10 } = req.query;
   const result = await paginate(User, { order: [["createdAt", "DESC"]] }, page, limit);
@@ -16,25 +46,61 @@ const listUsers = async (req, res) => {
   });
 };
 
-const syncUser = async (req, res) => {
-  const [user] = await User.findOrCreate({
-    where: { id: req.body.id },
-    defaults: {
-      id: req.body.id,
-      firstName: req.body.firstName,
-      lastName: req.body.lastName,
-      email: req.body.email,
-      role: req.body.role,
-      emailVerified: Boolean(req.body.emailVerified),
-      password: `ExternalAuthOnly${Date.now()}!`
+const applyUserProfileFields = (user, payload) => {
+  ["id", "firstName", "lastName", "email", "role", "emailVerified"].forEach((field) => {
+    if (Object.prototype.hasOwnProperty.call(payload, field)) {
+      user[field] = payload[field];
     }
   });
+};
 
-  ["firstName", "lastName", "email", "role", "emailVerified"].forEach((field) => {
-    if (Object.prototype.hasOwnProperty.call(req.body, field)) {
-      user[field] = req.body[field];
-    }
-  });
+const createSelfUserFromToken = async (req, userId: string) => {
+  if (req.user.id !== userId) {
+    return null;
+  }
+
+  const payload = {
+    id: req.user.id,
+    firstName: req.user.firstName,
+    lastName: req.user.lastName,
+    email: req.user.email,
+    role: req.user.role,
+    emailVerified: true,
+    password: `ExternalAuthOnly${Date.now()}!`
+  };
+
+  const existingByEmail: any = await User.findOne({ where: { email: req.user.email } });
+  if (existingByEmail) {
+    applyUserProfileFields(existingByEmail, payload);
+    await existingByEmail.save();
+    return existingByEmail;
+  }
+
+  return User.create(payload);
+};
+
+const syncUser = async (req, res) => {
+  const payload = {
+    id: req.body.id,
+    firstName: req.body.firstName,
+    lastName: req.body.lastName,
+    email: req.body.email,
+    role: req.body.role,
+    emailVerified: Boolean(req.body.emailVerified),
+    password: `ExternalAuthOnly${Date.now()}!`
+  };
+
+  let user: any = await User.findByPk(req.body.id);
+
+  if (!user) {
+    user = await User.findOne({ where: { email: String(req.body.email).toLowerCase().trim() } });
+  }
+
+  if (!user) {
+    user = await User.create(payload);
+  } else {
+    applyUserProfileFields(user, payload);
+  }
 
   await user.save();
 
@@ -45,7 +111,11 @@ const syncUser = async (req, res) => {
 };
 
 const getUser = async (req, res) => {
-  const user: any = await User.findByPk(req.params.id);
+  let user: any = await User.findByPk(req.params.id);
+
+  if (!user) {
+    user = await createSelfUserFromToken(req, req.params.id);
+  }
 
   if (!user) {
     throw new AppError("User not found", 404);
@@ -62,7 +132,11 @@ const getUser = async (req, res) => {
 };
 
 const updateUser = async (req, res) => {
-  const user: any = await User.findByPk(req.params.id);
+  let user: any = await User.findByPk(req.params.id);
+
+  if (!user) {
+    user = await createSelfUserFromToken(req, req.params.id);
+  }
 
   if (!user) {
     throw new AppError("User not found", 404);
@@ -83,6 +157,7 @@ const updateUser = async (req, res) => {
   });
 
   await user.save();
+  await syncAuthUser(user);
 
   return sendSuccess(res, {
     message: "User updated successfully",

@@ -25,6 +25,7 @@ import {
   IconLogout,
   IconShieldCheck,
   IconTool,
+  IconUserCircle,
   IconUsers
 } from "@tabler/icons-react";
 import { Link, Outlet, useLocation } from "react-router-dom";
@@ -68,6 +69,10 @@ const AppLayout = () => {
     {
       label: "Administration",
       items: isAdmin() ? [{ label: "User Management", to: "/admin/users", icon: IconUsers }] : []
+    },
+    {
+      label: "Account",
+      items: [{ label: "My Profile", to: "/profile", icon: IconUserCircle }]
     }
   ].filter((section) => section.items.length > 0);
 
@@ -87,7 +92,7 @@ const AppLayout = () => {
             <ThemeIcon className="brand-mark" size={36} radius="sm">
               <IconShieldCheck size={20} />
             </ThemeIcon>
-            <div>
+            <div className="header-brand-copy">
               <Text fw={800} size="sm">
                 TZW Fire Safety
               </Text>
@@ -105,14 +110,14 @@ const AppLayout = () => {
                 </ActionIcon>
               </Indicator>
             </Tooltip>
-            <Badge variant="light" color={isAdmin() ? "blue" : hasRole("INSPECTOR") ? "teal" : "gray"}>
+            <Badge className="header-role-badge" variant="light" color={isAdmin() ? "blue" : hasRole("INSPECTOR") ? "teal" : "gray"}>
               {user?.role || "USER"}
             </Badge>
             <Avatar color="blue" radius="xl" size={34}>
               {initials}
             </Avatar>
             {!collapsed ? (
-              <div style={{ minWidth: 112 }}>
+              <div className="header-user-copy" style={{ minWidth: 112 }}>
                 <Text size="sm" fw={700} lineClamp={1}>
                   {displayName}
                 </Text>

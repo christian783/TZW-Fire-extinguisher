@@ -18,11 +18,17 @@ export const startNotificationEventConsumer = async () => {
 
       try {
         const event = JSON.parse(message.content.toString("utf8"));
-        await sendDomainEventEmail(event.type, event.payload || {});
+        logger.info("[notification-service] RabbitMQ event received", {
+          type: event.type,
+          recipientEmail: event.payload?.recipientEmail
+        });
+        const result = await sendDomainEventEmail(event.type, event.payload || {});
+        logger.info("[notification-service] RabbitMQ event processed", result);
         channel.ack(message);
       } catch (error) {
         logger.error("[notification-service] Failed to process RabbitMQ event", {
-          message: error.message
+          message: error.message,
+          stack: error.stack
         });
         channel.nack(message, false, false);
       }

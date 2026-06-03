@@ -19,6 +19,7 @@ export const publishRabbitEvent = async (event: DomainEvent) => {
   const channel = await connection.createChannel();
 
   await channel.assertExchange(RABBITMQ_EXCHANGE(), "topic", { durable: true });
+  await assertNotificationQueue(channel);
   channel.publish(RABBITMQ_EXCHANGE(), event.type, Buffer.from(JSON.stringify(event)), {
     contentType: "application/json",
     persistent: true
@@ -35,4 +36,5 @@ export const assertNotificationQueue = async (channel) => {
   await channel.bindQueue(NOTIFICATION_QUEUE(), RABBITMQ_EXCHANGE(), "maintenance.*");
   await channel.bindQueue(NOTIFICATION_QUEUE(), RABBITMQ_EXCHANGE(), "extinguisher.*");
   await channel.bindQueue(NOTIFICATION_QUEUE(), RABBITMQ_EXCHANGE(), "user.registered");
+  await channel.bindQueue(NOTIFICATION_QUEUE(), RABBITMQ_EXCHANGE(), "auth.*");
 };

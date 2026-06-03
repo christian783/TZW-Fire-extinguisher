@@ -7,6 +7,7 @@ process.env.SERVICE_NAME = "notification-service";
 const app = require("./app").default;
 const startService = require("../../platform/startService").default;
 const startNotificationEventConsumer = require("./eventConsumer").startNotificationEventConsumer;
+const verifyEmailTransport = require("./emailService").verifyEmailTransport;
 
 (async () => {
   await startService({
@@ -15,5 +16,6 @@ const startNotificationEventConsumer = require("./eventConsumer").startNotificat
     port: process.env.NOTIFICATION_SERVICE_PORT || 5106
   });
 
+  await verifyEmailTransport();
   await startNotificationEventConsumer();
 })();

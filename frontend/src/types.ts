@@ -114,5 +114,4 @@ export type OtpResponse = {
   userId: string;
   email: string;
   expiresAt: string;
-  devOtp?: string;
 };

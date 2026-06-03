@@ -118,6 +118,18 @@ router.get("/maintenance", asyncHandler(reportController.maintenance));
  *           type: string
  *           enum: [csv, pdf]
  *           default: csv
+ *       - in: query
+ *         name: fromDate
+ *         description: Optional ISO date displayed in the exported report period metadata.
+ *         schema:
+ *           type: string
+ *           format: date
+ *       - in: query
+ *         name: toDate
+ *         description: Optional ISO date displayed in the exported report period metadata.
+ *         schema:
+ *           type: string
+ *           format: date
  *     responses:
  *       200:
  *         description: Report export generated successfully
@@ -136,7 +148,9 @@ router.get(
   "/:reportType/export",
   [
     param("reportType").isIn(["inventory", "inspections", "compliance", "maintenance"]).withMessage("reportType is not supported"),
-    query("format").optional().isIn(["csv", "pdf"]).withMessage("format must be csv or pdf")
+    query("format").optional().isIn(["csv", "pdf"]).withMessage("format must be csv or pdf"),
+    query("fromDate").optional({ checkFalsy: true }).isISO8601().withMessage("fromDate must be a valid ISO date"),
+    query("toDate").optional({ checkFalsy: true }).isISO8601().withMessage("toDate must be a valid ISO date")
   ],
   validate,
   asyncHandler(reportController.exportReport)

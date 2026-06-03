@@ -1,14 +1,61 @@
-import { ActionIcon, Badge, Card, Group, Select, SimpleGrid, Stack, Switch, Table, Text, TextInput, Title } from "@mantine/core";
+import {
+  ActionIcon,
+  Badge,
+  Button,
+  Card,
+  Group,
+  Modal,
+  PasswordInput,
+  Select,
+  SimpleGrid,
+  Stack,
+  Switch,
+  Table,
+  Text,
+  TextInput,
+  Title
+} from "@mantine/core";
+import { useForm } from "@mantine/form";
+import { useDisclosure } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
-import { IconTrash } from "@tabler/icons-react";
+import { IconPlus, IconTrash } from "@tabler/icons-react";
 import { useEffect, useMemo, useState } from "react";
 
 import api from "../api/axios";
-import { ApiResponse, Role, User } from "../types";
+import { ApiResponse, OtpResponse, Role, User } from "../types";
+
+type CreateUserValues = {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  role: Role;
+  emailVerified: boolean;
+};
 
 const Users = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [query, setQuery] = useState("");
+  const [opened, { close, open }] = useDisclosure(false);
+  const createForm = useForm<CreateUserValues>({
+    initialValues: {
+      firstName: "",
+      lastName: "",
+      email: "",
+      password: "",
+      role: "USER",
+      emailVerified: false
+    },
+    validate: {
+      firstName: (value) => (value.trim().length >= 2 ? null : "First name must be at least 2 characters"),
+      lastName: (value) => (value.trim().length >= 2 ? null : "Last name must be at least 2 characters"),
+      email: (value) => (/^\S+@\S+$/.test(value) ? null : "Enter a valid email"),
+      password: (value) =>
+        value.length >= 8 && /[A-Z]/.test(value) && /[a-z]/.test(value) && /[0-9]/.test(value)
+          ? null
+          : "Password must be 8+ characters with uppercase, lowercase, and number"
+    }
+  });
 
   const fetchUsers = async () => {
     const response = await api.get<ApiResponse<{ users: User[] }>>("/users");
@@ -22,6 +69,32 @@ const Users = () => {
   const updateUser = async (user: User, payload: Partial<User>) => {
     await api.patch(`/users/${user.id}`, payload);
     notifications.show({ color: "green", title: "User updated", message: user.email });
+    await fetchUsers();
+  };
+
+  const createUser = async (values: CreateUserValues) => {
+    const response = await api.post<ApiResponse<OtpResponse>>("/auth/register", {
+      firstName: values.firstName,
+      lastName: values.lastName,
+      email: values.email,
+      password: values.password,
+      role: values.role
+    });
+
+    if (values.emailVerified) {
+      await api.patch(`/users/${response.data.data.userId}`, {
+        role: values.role,
+        emailVerified: true
+      });
+    }
+
+    notifications.show({
+      color: "green",
+      title: "User created",
+      message: values.emailVerified ? `${values.email} is active.` : `Verification OTP sent to ${values.email}.`
+    });
+    createForm.reset();
+    close();
     await fetchUsers();
   };
 
@@ -46,11 +119,16 @@ const Users = () => {
 
   return (
     <Stack gap="lg">
-      <div>
-        <Text className="page-kicker">Administration</Text>
-        <Title order={1}>Users</Title>
-        <Text c="dimmed">Admin-only RBAC management.</Text>
-      </div>
+      <Group className="page-header" justify="space-between" align="flex-start">
+        <div className="page-title-copy">
+          <Text className="page-kicker">Administration</Text>
+          <Title order={1}>Users</Title>
+          <Text c="dimmed">Admin-only RBAC management.</Text>
+        </div>
+        <Button leftSection={<IconPlus size={16} />} onClick={open}>
+          Create user
+        </Button>
+      </Group>
 
       <SimpleGrid cols={{ base: 1, sm: 4 }}>
         <Card className="enterprise-card kpi-card" p="md">
@@ -139,6 +217,40 @@ const Users = () => {
         </Table.ScrollContainer>
         {filteredUsers.length === 0 ? <div className="empty-state">No users match the active search.</div> : null}
       </Card>
+
+      <Modal opened={opened} onClose={close} title="Create user" size={560}>
+        <form onSubmit={createForm.onSubmit(createUser)}>
+          <Stack>
+            <Group className="responsive-form-row" grow>
+              <TextInput label="First name" required {...createForm.getInputProps("firstName")} />
+              <TextInput label="Last name" required {...createForm.getInputProps("lastName")} />
+            </Group>
+            <TextInput label="Email" type="email" required {...createForm.getInputProps("email")} />
+            <PasswordInput label="Temporary password" required {...createForm.getInputProps("password")} />
+            <Select
+              label="Role"
+              data={[
+                { value: "USER", label: "User" },
+                { value: "INSPECTOR", label: "Inspector" },
+                { value: "ADMIN", label: "Admin" }
+              ]}
+              required
+              {...createForm.getInputProps("role")}
+            />
+            <Switch
+              label="Mark email as verified"
+              description="When disabled, the user must verify using the emailed OTP."
+              checked={createForm.values.emailVerified}
+              onChange={(event) => createForm.setFieldValue("emailVerified", event.currentTarget.checked)}
+            />
+            <Group justify="flex-end">
+              <Button type="submit" leftSection={<IconPlus size={16} />} loading={createForm.submitting}>
+                Create user
+              </Button>
+            </Group>
+          </Stack>
+        </form>
+      </Modal>
     </Stack>
   );
 };

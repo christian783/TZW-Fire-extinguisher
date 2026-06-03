@@ -23,7 +23,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
-import { ApiResponse, FireExtinguisher, Inspection, InspectionResult, InspectionStatus } from "../types";
+import { ApiResponse, FireExtinguisher, Inspection, InspectionResult, InspectionStatus, User } from "../types";
 
 const statusOptions: InspectionStatus[] = ["SCHEDULED", "COMPLETED", "OVERDUE", "CANCELLED"];
 const resultOptions: InspectionResult[] = ["PASS", "FAIL", "NEEDS_MAINTENANCE"];
@@ -39,22 +39,26 @@ type InspectionValues = {
   extinguisherId: string;
   scheduledDate: string;
   scheduledTime: string;
+  inspectorId: string;
   notes: string;
 };
 
 const Inspections = () => {
-  const { hasRole, isAdmin } = useAuth();
+  const { user, hasRole, isAdmin } = useAuth();
   const [inspections, setInspections] = useState<Inspection[]>([]);
   const [extinguishers, setExtinguishers] = useState<FireExtinguisher[]>([]);
+  const [inspectors, setInspectors] = useState<User[]>([]);
   const [view, setView] = useState<"list" | "calendar">("list");
   const [opened, { close, open }] = useDisclosure(false);
   const canComplete = hasRole(["ADMIN", "INSPECTOR"]);
+  const canAssignInspector = hasRole(["ADMIN", "INSPECTOR"]);
 
   const form = useForm<InspectionValues>({
     initialValues: {
       extinguisherId: "",
       scheduledDate: new Date().toISOString().slice(0, 10),
       scheduledTime: "09:00",
+      inspectorId: "",
       notes: ""
     },
     validate: {
@@ -65,12 +69,26 @@ const Inspections = () => {
   });
 
   const fetchData = async () => {
-    const [inspectionResponse, extinguisherResponse] = await Promise.all([
+    const requests = [
       api.get<ApiResponse<{ inspections: Inspection[] }>>("/inspections"),
       api.get<ApiResponse<{ extinguishers: FireExtinguisher[] }>>("/extinguishers?limit=100")
-    ]);
+    ] as const;
+    const [inspectionResponse, extinguisherResponse] = await Promise.all(requests);
     setInspections(inspectionResponse.data.data.inspections);
     setExtinguishers(extinguisherResponse.data.data.extinguishers);
+
+    if (isAdmin()) {
+      const userResponse = await api.get<ApiResponse<{ users: User[] }>>("/users?limit=100");
+      setInspectors(userResponse.data.data.users.filter((nextUser) => nextUser.role === "INSPECTOR"));
+      return;
+    }
+
+    if (user?.role === "INSPECTOR") {
+      setInspectors([user]);
+      return;
+    }
+
+    setInspectors([]);
   };
 
   useEffect(() => {
@@ -78,12 +96,19 @@ const Inspections = () => {
   }, []);
 
   const scheduleInspection = async (values: InspectionValues) => {
-    const response = await api.post<ApiResponse<{ inspection: Inspection; notification?: { message: string } }>>("/inspections", values);
+    const payload = {
+      ...values,
+      inspectorId: values.inspectorId || null
+    };
+    const response = await api.post<ApiResponse<{ inspection: Inspection; notification?: { message: string } }>>("/inspections", payload);
     notifications.show({
       color: "green",
       title: "Inspection scheduled",
       message: response.data.data.notification?.message || "Relevant personnel can now be notified."
     });
+    form.reset();
+    form.setFieldValue("scheduledDate", new Date().toISOString().slice(0, 10));
+    form.setFieldValue("scheduledTime", "09:00");
     close();
     await fetchData();
   };
@@ -104,6 +129,12 @@ const Inspections = () => {
     value: extinguisher.id,
     label: `${extinguisher.serialNumber} - ${extinguisher.location}`
   }));
+  const inspectorOptions = inspectors.map((inspector) => ({
+    value: inspector.id,
+    label: `${inspector.firstName} ${inspector.lastName} - ${inspector.email}`
+  }));
+  const extinguisherById = useMemo(() => new Map(extinguishers.map((extinguisher) => [extinguisher.id, extinguisher])), [extinguishers]);
+  const getInspectionExtinguisher = (inspection: Inspection) => inspection.extinguisher || extinguisherById.get(inspection.extinguisherId);
   const calendarDays = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -126,13 +157,13 @@ const Inspections = () => {
 
   return (
     <Stack gap="lg">
-      <Group justify="space-between" align="flex-start">
-        <div>
+      <Group className="page-header" justify="space-between" align="flex-start">
+        <div className="page-title-copy">
           <Text className="page-kicker">Operations</Text>
           <Title order={1}>Inspections</Title>
           <Text c="dimmed">Schedule inspections, record outcomes, and trigger operational notifications.</Text>
         </div>
-        <Group>
+        <Group className="page-actions">
           <SegmentedControl
             value={view}
             onChange={(value) => setView(value as "list" | "calendar")}
@@ -186,10 +217,18 @@ const Inspections = () => {
                 {inspections.map((inspection) => (
                   <Table.Tr key={inspection.id}>
                     <Table.Td>
-                      <Text fw={700}>{inspection.extinguisher?.serialNumber || inspection.extinguisherId}</Text>
-                      <Text size="sm" c="dimmed">
-                        {inspection.extinguisher?.location || "Location unavailable"}
-                      </Text>
+                      {(() => {
+                        const extinguisher = getInspectionExtinguisher(inspection);
+
+                        return (
+                          <>
+                            <Text fw={700}>{extinguisher?.serialNumber || "Unknown extinguisher"}</Text>
+                            <Text size="sm" c="dimmed">
+                              {extinguisher?.location || "Location unavailable"}
+                            </Text>
+                          </>
+                        );
+                      })()}
                     </Table.Td>
                     <Table.Td>
                       {new Date(inspection.scheduledDate).toLocaleDateString()} at {inspection.scheduledTime.slice(0, 5)}
@@ -256,12 +295,20 @@ const Inspections = () => {
                 <Stack gap="xs">
                   {day.inspections.map((inspection) => (
                     <div key={inspection.id}>
-                      <Text fw={700} size="sm">
-                        {inspection.scheduledTime.slice(0, 5)} / {inspection.extinguisher?.serialNumber || inspection.extinguisherId}
-                      </Text>
-                      <Text size="xs" c="dimmed">
-                        {inspection.extinguisher?.location || "Location unavailable"}
-                      </Text>
+                      {(() => {
+                        const extinguisher = getInspectionExtinguisher(inspection);
+
+                        return (
+                          <>
+                            <Text fw={700} size="sm">
+                              {inspection.scheduledTime.slice(0, 5)} / {extinguisher?.serialNumber || "Unknown extinguisher"}
+                            </Text>
+                            <Text size="xs" c="dimmed">
+                              {extinguisher?.location || "Location unavailable"}
+                            </Text>
+                          </>
+                        );
+                      })()}
                     </div>
                   ))}
                 </Stack>
@@ -276,7 +323,18 @@ const Inspections = () => {
         <form onSubmit={form.onSubmit(scheduleInspection)}>
           <Stack>
             <Select label="Fire extinguisher" data={extinguisherOptions} searchable required {...form.getInputProps("extinguisherId")} />
-            <Group grow>
+            {canAssignInspector ? (
+              <Select
+                label="Assigned inspector"
+                data={inspectorOptions}
+                searchable
+                clearable
+                placeholder={inspectorOptions.length ? "Choose an inspector" : "No inspectors available"}
+                disabled={!inspectorOptions.length}
+                {...form.getInputProps("inspectorId")}
+              />
+            ) : null}
+            <Group className="responsive-form-row" grow>
               <TextInput label="Inspection date" type="date" required {...form.getInputProps("scheduledDate")} />
               <TextInput label="Inspection time" type="time" required {...form.getInputProps("scheduledTime")} />
             </Group>

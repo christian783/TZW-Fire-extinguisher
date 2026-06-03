@@ -72,8 +72,8 @@ const Maintenance = () => {
 
   return (
     <Stack gap="lg">
-      <Group justify="space-between" align="flex-start">
-        <div>
+      <Group className="page-header" justify="space-between" align="flex-start">
+        <div className="page-title-copy">
           <Text className="page-kicker">Operations</Text>
           <Title order={1}>Maintenance</Title>
           <Text c="dimmed">Log repair actions, recurring issues, and recommendations for compliance history.</Text>
@@ -110,13 +110,13 @@ const Maintenance = () => {
         <Drawer opened={opened} onClose={close} title="Log maintenance" position="right" size={560}>
           <form onSubmit={form.onSubmit(logMaintenance)}>
             <Stack>
-              <Group grow align="flex-start">
+              <Group className="responsive-form-row" grow align="flex-start">
                 <Select label="Fire extinguisher" data={extinguisherOptions} searchable required {...form.getInputProps("extinguisherId")} />
                 <TextInput label="Maintenance date" type="date" required {...form.getInputProps("maintenanceDate")} />
                 <Select label="Next status" data={statusOptions} required {...form.getInputProps("nextStatus")} />
               </Group>
               <Textarea label="Action taken" minRows={3} required {...form.getInputProps("actionTaken")} />
-              <Group grow align="flex-start">
+              <Group className="responsive-form-row" grow align="flex-start">
                 <Textarea label="Issues identified" minRows={3} {...form.getInputProps("issuesIdentified")} />
                 <Textarea label="Recommendations" minRows={3} {...form.getInputProps("recommendations")} />
               </Group>
