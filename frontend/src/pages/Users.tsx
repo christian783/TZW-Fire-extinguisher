@@ -23,6 +23,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import api from "../api/axios";
 import { ApiResponse, OtpResponse, Role, User } from "../types";
+import { isPasswordValid, passwordValidationMessage } from "../utils/passwordRules";
 
 type CreateUserValues = {
   firstName: string;
@@ -50,10 +51,7 @@ const Users = () => {
       firstName: (value) => (value.trim().length >= 2 ? null : "First name must be at least 2 characters"),
       lastName: (value) => (value.trim().length >= 2 ? null : "Last name must be at least 2 characters"),
       email: (value) => (/^\S+@\S+$/.test(value) ? null : "Enter a valid email"),
-      password: (value) =>
-        value.length >= 8 && /[A-Z]/.test(value) && /[a-z]/.test(value) && /[0-9]/.test(value)
-          ? null
-          : "Password must be 8+ characters with uppercase, lowercase, and number"
+      password: (value) => (isPasswordValid(value) ? null : passwordValidationMessage)
     }
   });
 
