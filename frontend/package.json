@@ -4,8 +4,8 @@
   "description": "TypeScript React frontend for TZW LTD fire extinguisher operations with Mantine UI, Axios, protected routes, OTP signup, extinguisher CRUD, inspections, maintenance, reports, and RBAC screens.",
   "type": "module",
   "scripts": {
-    "dev": "vite --host 0.0.0.0 --port 3000",
-    "build": "tsc -p tsconfig.json && vite build",
+    "dev": "node init && vite --host 0.0.0.0 --port 3000",
+    "build": "node init && tsc -p tsconfig.json && vite build",
     "preview": "vite preview --host 0.0.0.0 --port 3000"
   },
   "dependencies": {

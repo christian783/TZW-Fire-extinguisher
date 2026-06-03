@@ -61,6 +61,9 @@ const Login = () => {
             <Stack>
               <TextInput label="Email" type="email" autoComplete="email" required {...form.getInputProps("email")} />
               <PasswordInput label="Password" autoComplete="current-password" required {...form.getInputProps("password")} />
+              <Anchor component={Link} to="/forgot-password" size="sm" ta="right">
+                Forgot password?
+              </Anchor>
               <Button type="submit" loading={form.submitting} fullWidth>
                 Sign in
               </Button>
