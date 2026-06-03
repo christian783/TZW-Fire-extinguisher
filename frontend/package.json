@@ -1,27 +1,31 @@
 {
   "name": "restful-template-frontend",
   "version": "1.0.0",
-  "description": "React frontend boilerplate with Axios, React Router DOM, Tailwind CSS, JWT auth context, protected routes, and reusable UI components.",
+  "description": "TypeScript React frontend for TZW LTD fire extinguisher operations with Mantine UI, Axios, protected routes, OTP signup, extinguisher CRUD, inspections, maintenance, reports, and RBAC screens.",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 3000",
-    "build": "vite build",
+    "build": "tsc -p tsconfig.json && vite build",
     "preview": "vite preview --host 0.0.0.0 --port 3000"
   },
   "dependencies": {
+    "@mantine/core": "^9.2.2",
+    "@mantine/form": "^9.2.2",
+    "@mantine/hooks": "^9.2.2",
+    "@mantine/notifications": "^9.2.2",
+    "@tabler/icons-react": "^3.44.0",
     "axios": "^1.7.9",
     "jwt-decode": "^4.0.0",
-    "lucide-react": "^0.468.0",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "react-hot-toast": "^2.4.1",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
     "react-router-dom": "^6.28.1"
   },
   "devDependencies": {
+    "@types/node": "^25.9.1",
+    "@types/react": "^19.2.15",
+    "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^4.3.4",
-    "autoprefixer": "^10.4.20",
-    "postcss": "^8.4.49",
-    "tailwindcss": "^3.4.17",
+    "typescript": "^6.0.3",
     "vite": "^6.0.3"
   },
   "engines": {

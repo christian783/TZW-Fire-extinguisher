@@ -2,15 +2,17 @@
   "name": "restful-template",
   "version": "1.0.0",
   "private": true,
-  "description": "Reusable React and Express RESTful boilerplate with PostgreSQL, Sequelize, JWT auth, Swagger, logging, validation, and Tailwind CSS.",
+  "description": "TZW LTD Fire Extinguisher Management System with a TypeScript RESTful microservices-oriented API gateway, PostgreSQL, Sequelize, JWT/OTP auth, RBAC, Swagger, reports, exports, and Mantine UI.",
   "workspaces": [
     "backend",
     "frontend"
   ],
   "scripts": {
-    "dev": "concurrently \"npm run dev --workspace backend\" \"npm run dev --workspace frontend\"",
-    "start": "npm run start --workspace backend",
-    "build": "npm run build --workspace frontend",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev --workspace frontend\"",
+    "dev:backend": "npm run build --workspace backend && concurrently \"npm run start:auth --workspace backend\" \"npm run start:users --workspace backend\" \"npm run start:extinguishers --workspace backend\" \"npm run start:inspection-maintenance --workspace backend\" \"npm run start:reports --workspace backend\" \"npm run start:notifications --workspace backend\" \"npm run start:gateway --workspace backend\"",
+    "start": "npm run start:backend",
+    "start:backend": "concurrently \"npm run start:auth --workspace backend\" \"npm run start:users --workspace backend\" \"npm run start:extinguishers --workspace backend\" \"npm run start:inspection-maintenance --workspace backend\" \"npm run start:reports --workspace backend\" \"npm run start:notifications --workspace backend\" \"npm run start:gateway --workspace backend\"",
+    "build": "npm run build --workspace backend && npm run build --workspace frontend",
     "install:all": "npm install"
   },
   "devDependencies": {

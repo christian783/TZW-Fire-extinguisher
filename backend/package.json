@@ -1,15 +1,31 @@
 {
   "name": "restful-template-backend",
   "version": "1.0.0",
-  "description": "Express REST API boilerplate with PostgreSQL, Sequelize, JWT auth, Swagger, Winston, Morgan, and express-validator.",
-  "main": "server.js",
+  "description": "TypeScript Express API gateway for TZW LTD fire extinguisher microservices with PostgreSQL, Sequelize, JWT/OTP auth, RBAC, Swagger, reports, exports, Winston, Morgan, and express-validator.",
+  "main": "dist/server.js",
   "type": "commonjs",
   "scripts": {
-    "dev": "nodemon server.js",
-    "start": "node server.js"
+    "build": "tsc -p tsconfig.json",
+    "dev": "npm run build && node dist/src/gateway/server.js",
+    "dev:gateway": "npm run build && node dist/src/gateway/server.js",
+    "dev:auth": "npm run build && node dist/src/services/auth/server.js",
+    "dev:users": "npm run build && node dist/src/services/users/server.js",
+    "dev:extinguishers": "npm run build && node dist/src/services/extinguishers/server.js",
+    "dev:inspection-maintenance": "npm run build && node dist/src/services/inspectionMaintenance/server.js",
+    "dev:reports": "npm run build && node dist/src/services/reports/server.js",
+    "dev:notifications": "npm run build && node dist/src/services/notifications/server.js",
+    "start": "node dist/src/gateway/server.js",
+    "start:gateway": "node dist/src/gateway/server.js",
+    "start:auth": "node dist/src/services/auth/server.js",
+    "start:users": "node dist/src/services/users/server.js",
+    "start:extinguishers": "node dist/src/services/extinguishers/server.js",
+    "start:inspection-maintenance": "node dist/src/services/inspectionMaintenance/server.js",
+    "start:reports": "node dist/src/services/reports/server.js",
+    "start:notifications": "node dist/src/services/notifications/server.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
+    "amqplib": "^0.10.5",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
@@ -17,6 +33,7 @@
     "helmet": "^8.0.0",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
+    "nodemailer": "^6.9.16",
     "pg": "^8.13.1",
     "pg-hstore": "^2.3.4",
     "sequelize": "^6.37.8",
@@ -25,7 +42,9 @@
     "winston": "^3.17.0"
   },
   "devDependencies": {
-    "nodemon": "^3.1.9"
+    "@types/node": "^25.9.1",
+    "nodemon": "^3.1.9",
+    "typescript": "^6.0.3"
   },
   "engines": {
     "node": ">=18"
