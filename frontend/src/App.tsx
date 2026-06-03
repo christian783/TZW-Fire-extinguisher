@@ -4,11 +4,13 @@ import AppLayout from "./components/AppLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Dashboard from "./pages/Dashboard";
 import Extinguishers from "./pages/Extinguishers";
+import ForgotPassword from "./pages/ForgotPassword";
 import Inspections from "./pages/Inspections";
 import Login from "./pages/Login";
 import Maintenance from "./pages/Maintenance";
 import Profile from "./pages/Profile";
 import Register from "./pages/Register";
+import ResetPassword from "./pages/ResetPassword";
 import Reports from "./pages/Reports";
 import Users from "./pages/Users";
 import VerifyOtp from "./pages/VerifyOtp";
@@ -20,6 +22,8 @@ const App = () => {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/verify-otp" element={<VerifyOtp />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
       <Route element={<ProtectedRoute roles={["ADMIN", "INSPECTOR", "USER"]} />}>
         <Route element={<AppLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />

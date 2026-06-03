@@ -6,6 +6,7 @@ import { Link, useNavigate } from "react-router-dom";
 
 import api from "../api/axios";
 import { ApiResponse, OtpResponse, Role } from "../types";
+import { getPasswordScore, getPasswordStrength, isPasswordValid, passwordRequirements, passwordValidationMessage } from "../utils/passwordRules";
 
 type RegisterValues = {
   firstName: string;
@@ -13,39 +14,6 @@ type RegisterValues = {
   email: string;
   password: string;
   role: Role;
-};
-
-type PasswordRequirement = {
-  label: string;
-  test: (value: string) => boolean;
-};
-
-const passwordRequirements: PasswordRequirement[] = [
-  { label: "At least 8 characters", test: (value) => value.length >= 8 },
-  { label: "One uppercase letter", test: (value) => /[A-Z]/.test(value) },
-  { label: "One lowercase letter", test: (value) => /[a-z]/.test(value) },
-  { label: "One number", test: (value) => /[0-9]/.test(value) },
-  { label: "Not just letters or numbers", test: (value) => /[^A-Za-z0-9]/.test(value) }
-];
-
-const getPasswordScore = (password: string) => {
-  if (!password) {
-    return 0;
-  }
-
-  return Math.round((passwordRequirements.filter((requirement) => requirement.test(password)).length / passwordRequirements.length) * 100);
-};
-
-const getPasswordStrength = (score: number) => {
-  if (score < 40) {
-    return { color: "red", label: "Weak" };
-  }
-
-  if (score < 80) {
-    return { color: "yellow", label: "Good" };
-  }
-
-  return { color: "teal", label: "Strong" };
 };
 
 const Register = () => {
@@ -62,7 +30,7 @@ const Register = () => {
       firstName: (value) => (value.trim().length >= 2 ? null : "First name must be at least 2 characters"),
       lastName: (value) => (value.trim().length >= 2 ? null : "Last name must be at least 2 characters"),
       email: (value) => (/^\S+@\S+$/.test(value) ? null : "Enter a valid email"),
-      password: (value) => (passwordRequirements.slice(0, 4).every((requirement) => requirement.test(value)) ? null : "Password is too weak")
+      password: (value) => (isPasswordValid(value) ? null : passwordValidationMessage)
     }
   });
 
