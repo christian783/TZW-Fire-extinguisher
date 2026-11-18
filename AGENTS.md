@@ -25,9 +25,10 @@ This is the TZW LTD Fire Extinguisher Management System.
 
 ```text
 .
-  package.json
-  package-lock.json
-  AGENTS.md
+ package.json
+ package-lock.json
+ scripts/check-dropper.mjs
+ AGENTS.md
   microservices.md
   backend/
     server.ts
@@ -77,6 +78,7 @@ npm install
 npm run dev
 npm run start
 npm run build
+npm run security:check
 npm run dev --workspace backend
 npm run dev --workspace frontend
 ```
@@ -249,7 +251,7 @@ There is no automated test suite configured yet. At minimum:
 
 - Run `npm.cmd run build --workspace backend` after backend changes.
 - Run `npm.cmd run build --workspace frontend` after frontend changes.
-- Run `npm.cmd run build` for full-stack changes.
+- Run `npm.cmd run build` for full-stack changes. The root build starts with `npm run security:check`, a static scan that rejects the hidden-tab JavaScript dropper (extensionless init files, tab-padded obfuscated payloads, and npm script hooks that launch them) without executing scanned files.
 - Load the compiled Swagger spec when changing docs.
 - Verify protected frontend flows redirect unauthenticated users to `/login`.
 
