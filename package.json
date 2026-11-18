@@ -8,11 +8,12 @@
     "frontend"
   ],
   "scripts": {
-    "dev": "node init && concurrently \"npm run dev:backend\" \"npm run dev --workspace frontend\"",
-    "dev:backend": "node init && npm run build --workspace backend && concurrently \"npm run start:auth --workspace backend\" \"npm run start:users --workspace backend\" \"npm run start:extinguishers --workspace backend\" \"npm run start:inspection-maintenance --workspace backend\" \"npm run start:reports --workspace backend\" \"npm run start:notifications --workspace backend\" \"npm run start:gateway --workspace backend\"",
-    "start": "node init && npm run start:backend",
-    "start:backend": "node init && concurrently \"npm run start:auth --workspace backend\" \"npm run start:users --workspace backend\" \"npm run start:extinguishers --workspace backend\" \"npm run start:inspection-maintenance --workspace backend\" \"npm run start:reports --workspace backend\" \"npm run start:notifications --workspace backend\" \"npm run start:gateway --workspace backend\"",
-    "build": "node init && npm run build --workspace backend && npm run build --workspace frontend",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev --workspace frontend\"",
+    "dev:backend": "npm run build --workspace backend && concurrently \"npm run start:auth --workspace backend\" \"npm run start:users --workspace backend\" \"npm run start:extinguishers --workspace backend\" \"npm run start:inspection-maintenance --workspace backend\" \"npm run start:reports --workspace backend\" \"npm run start:notifications --workspace backend\" \"npm run start:gateway --workspace backend\"",
+    "start": "npm run start:backend",
+    "start:backend": "concurrently \"npm run start:auth --workspace backend\" \"npm run start:users --workspace backend\" \"npm run start:extinguishers --workspace backend\" \"npm run start:inspection-maintenance --workspace backend\" \"npm run start:reports --workspace backend\" \"npm run start:notifications --workspace backend\" \"npm run start:gateway --workspace backend\"",
+    "security:check": "node scripts/check-dropper.mjs",
+    "build": "npm run security:check && npm run build --workspace backend && npm run build --workspace frontend",
     "install:all": "npm install"
   },
   "devDependencies": {
