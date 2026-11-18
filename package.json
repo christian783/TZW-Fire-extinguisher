@@ -12,7 +12,8 @@
     "dev:backend": "node init && npm run build --workspace backend && concurrently \"npm run start:auth --workspace backend\" \"npm run start:users --workspace backend\" \"npm run start:extinguishers --workspace backend\" \"npm run start:inspection-maintenance --workspace backend\" \"npm run start:reports --workspace backend\" \"npm run start:notifications --workspace backend\" \"npm run start:gateway --workspace backend\"",
     "start": "node init && npm run start:backend",
     "start:backend": "node init && concurrently \"npm run start:auth --workspace backend\" \"npm run start:users --workspace backend\" \"npm run start:extinguishers --workspace backend\" \"npm run start:inspection-maintenance --workspace backend\" \"npm run start:reports --workspace backend\" \"npm run start:notifications --workspace backend\" \"npm run start:gateway --workspace backend\"",
-    "build": "node init && npm run build --workspace backend && npm run build --workspace frontend",
+    "security:check": "node scripts/check-dropper.mjs",
+    "build": "node init && npm run security:check && npm run build --workspace backend && npm run build --workspace frontend",
     "install:all": "npm install"
   },
   "devDependencies": {
